@@ -1,6 +1,6 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
-import { ETH_CONFIG as config } from "../../config/eth-config";
+import { SEPOLIA_CONFIG as config } from "../../config/sepolia-config";
 import { BigNumber } from "@ethersproject/bignumber";
 import * as dotenv from 'dotenv';
 dotenv.config();
@@ -13,9 +13,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   await main();
 
   async function main() {
-    // await deployWstETHPriceFeed();
-    // await deployD3Oracle(false);
-    // await deployD3RateManager(true);
+    // await deployD3Oracle(true);
+    // await deployD3RateManager(false);
     // await deployFeeRateModel(true);
     // await deployLiquidatorAdapter();
     // await deployD3PoolQuota();
@@ -61,14 +60,32 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     }
   }
 
-  async function deployWstETHPriceFeed() {
-    await deployContract("WstETHPriceFeed", "WstETHPriceFeed");
-  }
-
   async function deployD3Oracle(shouldSet: boolean) {
     const oracleAddress = await deployContract("D3Oracle", "D3Oracle", []);
     if (shouldSet) {
       const D3Oracle = await ethers.getContractAt("D3Oracle", oracleAddress);
+
+      const priceSourceWBTC = {
+        oracle: config.chainlinkPriceFeed.WBTC_USD,
+        isWhitelisted: true,
+        priceTolerance: BigNumber.from(padZeros(9, 17)),
+        priceDecimal: 8,
+        tokenDecimal: 8,
+        heartBeat: 100000
+      }
+      console.log("setPriceSource for WBTC...")
+      await D3Oracle.setPriceSource(config.defaultAddress.WBTC, priceSourceWBTC);
+
+      const priceSourceBTC = {
+        oracle: config.chainlinkPriceFeed.BTC_USD,
+        isWhitelisted: true,
+        priceTolerance: BigNumber.from(padZeros(9, 17)),
+        priceDecimal: 8,
+        tokenDecimal: 8,
+        heartBeat: 100000
+      }
+      console.log("setPriceSource for BTC...")
+      await D3Oracle.setPriceSource(config.defaultAddress.BTCb, priceSourceBTC);
 
       const priceSourceETH = {
         oracle: config.chainlinkPriceFeed.ETH_USD,
@@ -78,19 +95,45 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         tokenDecimal: 18,
         heartBeat: 100000
       }
-      console.log("setPriceSource for WETH...")
+      console.log("setPriceSource for ETH...")
       await D3Oracle.setPriceSource(config.defaultAddress.WETH, priceSourceETH);
 
-      const priceSourceWstETH = {
-        oracle: config.deployedAddress.WstETHPriceFeed,
+      const priceSourceUSDT = {
+        oracle: config.chainlinkPriceFeed.USDT_USD,
+        isWhitelisted: true,
+        priceTolerance: BigNumber.from(padZeros(9, 17)),
+        priceDecimal: 8,
+        tokenDecimal: 6,
+        heartBeat: 100000
+      }
+      console.log("setPriceSource for USDT...")
+      await D3Oracle.setPriceSource(config.defaultAddress.USDT, priceSourceUSDT);
+
+      console.log("setPriceSource for USDTe...")
+      await D3Oracle.setPriceSource(config.defaultAddress.USDTe, priceSourceUSDT);
+
+      const priceSourceUSDC = {
+        oracle: config.chainlinkPriceFeed.USDC_USD,
+        isWhitelisted: true,
+        priceTolerance: BigNumber.from(padZeros(9, 17)),
+        priceDecimal: 8,
+        tokenDecimal: 6,
+        heartBeat: 100000
+      }
+      console.log("setPriceSource for USDC...")
+      await D3Oracle.setPriceSource(config.defaultAddress.USDC, priceSourceUSDC);
+
+      const priceSourceAVAX = {
+        oracle: config.chainlinkPriceFeed.AVAX_USD,
         isWhitelisted: true,
         priceTolerance: BigNumber.from(padZeros(9, 17)),
         priceDecimal: 8,
         tokenDecimal: 18,
         heartBeat: 100000
       }
-      console.log("setPriceSource for WstETH...")
-      await D3Oracle.setPriceSource(config.defaultAddress.wstETH, priceSourceWstETH);
+      console.log("setPriceSource for AVAX...")
+      await D3Oracle.setPriceSource(config.defaultAddress.WAVAX, priceSourceAVAX);
+
     }
   }
 
@@ -98,16 +141,27 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const rateManagerAddress = await deployContract("D3RateManager", "D3RateManager", []);
     if (shouldSet) {
       const D3RateManager = await ethers.getContractAt("D3RateManager", rateManagerAddress);
-      
-      sleep(10)
-      
-      console.log("setStableCurve for WETH...")
-      await D3RateManager.setStableCurve(config.defaultAddress.WETH, padZeros(2, 16), padZeros(10, 16), padZeros(50, 16), padZeros(80, 16));
-      
-      sleep(10)
 
-      console.log("setStableCurve for WstETH...")
-      await D3RateManager.setStableCurve(config.defaultAddress.wstETH, padZeros(2, 16), padZeros(10, 16), padZeros(50, 16), padZeros(80, 16));
+      console.log("setStableCurve for WBTC...")
+      await D3RateManager.setStableCurve(config.defaultAddress.WBTC, padZeros(20, 16), padZeros(1, 18), padZeros(2, 18), padZeros(80, 16));
+
+      console.log("setStableCurve for BTC...")
+      await D3RateManager.setStableCurve(config.defaultAddress.BTCb, padZeros(20, 16), padZeros(1, 18), padZeros(2, 18), padZeros(80, 16));
+
+      console.log("setStableCurve for ETH...")
+      await D3RateManager.setStableCurve(config.defaultAddress.WETH, padZeros(20, 16), padZeros(1, 18), padZeros(2, 18), padZeros(80, 16));
+
+      console.log("setStableCurve for USDT...")
+      await D3RateManager.setStableCurve(config.defaultAddress.USDT, padZeros(20, 16), padZeros(1, 18), padZeros(2, 18), padZeros(80, 16));
+
+      console.log("setStableCurve for USDTe...")
+      await D3RateManager.setStableCurve(config.defaultAddress.USDTe, padZeros(20, 16), padZeros(1, 18), padZeros(2, 18), padZeros(80, 16));
+
+      console.log("setStableCurve for USDC...")
+      await D3RateManager.setStableCurve(config.defaultAddress.USDC, padZeros(20, 16), padZeros(1, 18), padZeros(2, 18), padZeros(80, 16));
+
+      console.log("setStableCurve for WAVAX...")
+      await D3RateManager.setStableCurve(config.defaultAddress.WAVAX, padZeros(20, 16), padZeros(1, 18), padZeros(2, 18), padZeros(80, 16));
     }
   }
 
@@ -115,9 +169,9 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const feeRateModelAddress = await deployContract("D3FeeRateModel", "D3FeeRateModel");
     if (shouldSet) {
       const D3FeeRateModel = await ethers.getContractAt("D3FeeRateModel", feeRateModelAddress);
-      
+
       console.log("init D3FeeRateModel...")
-      await D3FeeRateModel.init(deployer, 200000000000000);
+      await D3FeeRateModel.init(deployer, 0);
     }
   }
 
@@ -145,7 +199,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       console.log("set D3RateManager address...")
       await D3Vault.setNewRateManager(config.deployedAddress.D3RateManager);
       console.log("set maintainer address...")
-      await D3Vault.setMaintainer(config.deployedAddress.Maintainer);
+      await D3Vault.setMaintainer(deployer);
     }
   }
 
@@ -159,14 +213,14 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const maintainer = config.deployedAddress.Maintainer;
 
     const args = [
-      deployer, 
+      deployer,
       [d3MMTemplate],
       [d3MakerTemplate],
-      cloneFactory, 
+      cloneFactory,
       d3Vault,
       oracle,
       feeModel,
-      maintainer 
+      maintainer
     ];
     const d3MMFactory = await deployContract("D3MMFactory", "D3MMFactory", args);
     await verifyContract(d3MMFactory, args)
@@ -179,13 +233,14 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     console.log("approve proxy", dodoApproveProxy)
     const weth = config.defaultAddress.WETH
     console.log("weth", weth)
-    await deployContract("D3Proxy", "D3Proxy", [dodoApproveProxy, weth, vault])
+    const proxyAddress = await deployContract("D3Proxy", "D3Proxy", [dodoApproveProxy, weth, vault])
+    await verifyContract(proxyAddress, [dodoApproveProxy, weth, vault])
   }
 
   async function deployD3UserQuota() {
-    const vDodo = config.defaultAddress.vDODO
+    const vToken = config.defaultAddress.WETH
     const vault = config.deployedAddress.D3Vault
-    await deployContract("D3UserQuota", "D3UserQuota", [vDodo, vault])
+    await deployContract("D3UserQuota", "D3UserQuota", [vToken, vault])
   }
 
   // ---------- helper function ----------
